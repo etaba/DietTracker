@@ -55,7 +55,7 @@ def deleteMeal(name):
                 WHERE rowid IN ( \
                     SELECT rowid \
                     FROM meal \
-                    WHERE DATE(mealDate)=DATE("now") \
+                    WHERE DATE(mealDate)=DATE("now", "localtime") \
                             AND food="{}" \
                     LIMIT 1)'.format(name))
     conn.commit()
@@ -73,7 +73,7 @@ def addMeal(food):
     else:
         food = foods[0][0]
         try:
-            c.execute('INSERT INTO meal (mealDate, food) VALUES (DATE("now"),"{}")'.format(food))
+            c.execute('INSERT INTO meal (mealDate, food) VALUES (DATE("now", "localtime"),"{}")'.format(food))
         except Exception as e:
             print(e)
         conn.commit()
@@ -84,7 +84,7 @@ def exercise(cal):
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
     try:
-        c.execute('INSERT INTO exercise (exerciseDate, cal) VALUES (DATE("now"),"{}")'.format(cal))
+        c.execute('INSERT INTO exercise (exerciseDate, cal) VALUES (DATE("now", "localtime"),"{}")'.format(cal))
     except Exception as e:
         print(e)
     conn.commit()
@@ -111,12 +111,12 @@ def printDailyStatus():
                 FROM food \
                 INNER JOIN meal \
                     ON  food.name = meal.food \
-                        AND DATE(meal.mealDate)=DATE("now")')
+                        AND DATE(meal.mealDate)=DATE("now", "localtime")')
     foods = c.fetchall()
-    c.execute('SELECT SUM(exercise.cal) FROM exercise WHERE DATE(exercise.exerciseDate)=DATE("now")')
+    c.execute('SELECT SUM(exercise.cal) FROM exercise WHERE DATE(exercise.exerciseDate)=DATE("now", "localtime")')
     ex = c.fetchall()
     pprint(ex)
-    calsBurned = ex[0][0]
+    calsBurned = ex[0][0] if ex[0][0] != None else 0
     print("\n\n\n                   <<<<<EATEN TODAY>>>>>")
     prettyFoods(foods)
     zipped = list(zip(*foods))
@@ -133,7 +133,7 @@ def printDailyStatus():
         print("                   <<<<<TOTAL>>>>>")
         print(printableTotals)
         zipped = zip(DIET.values(),[-1*x for x in totals])
-        remaining = [(0 if sum(x) < 0 else sum(x)) for x in zipped]
+        remaining = [(0 if sum(x) < 0 else round(sum(x),2)) for x in zipped]
         print("                   <<<<<NEED>>>>>")
         print("Cal: {}  Fat: {}g  Protein: {}g  Carbs: {}g  Sodium: {}g  Potassium:  {}g".format(*remaining))
 
